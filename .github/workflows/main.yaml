@@ -44,13 +44,14 @@ jobs:
         run: npm run test:unit
 
   build-container:
+    needs: test
     name: Build Container
     runs-on: ubuntu-latest
     outputs:
       image: ${{ steps.build-image.outputs.image }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Build image and push it to the registry
       id: build-image
       env:
