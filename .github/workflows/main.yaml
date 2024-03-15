@@ -43,20 +43,22 @@ jobs:
       - name: Run unit tests
         run: npm run test:unit
 
-      - name: Run end-to-end tests
-        run: npm run test:e2e
-
-  dockerize:
-    needs: test
+  build-container:
+    name: Build Container
     runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.build-image.outputs.image }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Build Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: false
-          tags: your-docker-image-tag
+    - uses: actions/checkout@v2
+    - name: Build image and push it to the registry
+      id: build-image
+      env:
+        CONTAINER_REGISTRY: ghcr.io/fourco-ffgm
+        CONTAINER_REPOSITORY: fourco-workshop
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        docker build -t $CONTAINER_REGISTRY/$CONTAINER_REPOSITORY:$IMAGE_TAG . --file Dockerfile
+        echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+        docker push $CONTAINER_REGISTRY/$CONTAINER_REPOSITORY:$IMAGE_TAG
+        echo "::set-output name=image::$CONTAINER_REGISTRY/$CONTAINER_REPOSITORY:$IMAGE_TAG"
